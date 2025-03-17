@@ -242,6 +242,7 @@ fn get_save_path<R: Runtime>(app_handle: &AppHandle<R>) -> Result<PathBuf, Strin
     Ok(save_path)
 }
 
+/// Converts a cpal::SampleFormat to a hound::SampleFormat.
 fn sample_format(format: cpal::SampleFormat) -> SampleFormat {
     if format.is_float() {
         SampleFormat::Float
@@ -250,6 +251,7 @@ fn sample_format(format: cpal::SampleFormat) -> SampleFormat {
     }
 }
 
+/// Creates a WavSpec from a cpal::SupportedStreamConfig.
 fn wav_spec_from_config(config: &cpal::SupportedStreamConfig) -> WavSpec {
     WavSpec {
         channels: config.channels() as _,
@@ -259,6 +261,7 @@ fn wav_spec_from_config(config: &cpal::SupportedStreamConfig) -> WavSpec {
     }
 }
 
+/// Writes input data to the WAV writer.
 fn write_input_data<T, U>(input: &[T], writer: &WavWriterHandle)
 where
     T: Sample,
