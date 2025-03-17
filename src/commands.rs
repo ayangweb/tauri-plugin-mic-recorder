@@ -2,27 +2,44 @@ use chrono::Local;
 use clap::Parser;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    FromSample, Sample,
+    FromSample, Sample, Stream,
 };
 use hound::{SampleFormat, WavSpec, WavWriter};
+use std::sync::LazyLock;
 use std::{
     fs::{create_dir_all, File},
     io::BufWriter,
+    marker::{Send, Sync},
     path::PathBuf,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
-    },
-    time::Duration,
+    sync::{Arc, Mutex},
 };
-use std::{sync::LazyLock, thread::sleep};
 use tauri::{command, AppHandle, Manager, Runtime};
 
 type WavWriterHandle = Arc<Mutex<Option<WavWriter<BufWriter<File>>>>>;
 
-static IS_RECORDING: AtomicBool = AtomicBool::new(false);
-static SAVE_PATH: LazyLock<Arc<Mutex<Option<PathBuf>>>> =
-    LazyLock::new(|| Arc::new(Mutex::new(None)));
+struct RecordingState {
+    is_recording: bool,
+    save_path: Option<PathBuf>,
+    writer: WavWriterHandle,
+    stream: Arc<Mutex<Option<Stream>>>,
+}
+
+unsafe impl Send for RecordingState {}
+unsafe impl Sync for RecordingState {}
+
+impl RecordingState {
+    fn new() -> Self {
+        Self {
+            is_recording: false,
+            writer: Arc::new(Mutex::new(None)),
+            stream: Arc::new(Mutex::new(None)),
+            save_path: None,
+        }
+    }
+}
+
+static RECORDING_STATE: LazyLock<Arc<Mutex<RecordingState>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(RecordingState::new())));
 
 #[derive(Parser, Debug)]
 struct Opt {
@@ -55,11 +72,11 @@ struct Opt {
 /// ```
 #[command]
 pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(), String> {
-    if IS_RECORDING.load(Ordering::SeqCst) {
+    let mut state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
+    if state.is_recording {
         return Err("Recording is already in progress.".to_string());
     }
-
-    IS_RECORDING.store(true, Ordering::SeqCst);
+    state.is_recording = true;
 
     let opt = Opt::parse();
 
@@ -162,19 +179,9 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
 
     stream.play().map_err(|err| err.to_string())?;
 
-    while IS_RECORDING.load(Ordering::SeqCst) {
-        sleep(Duration::from_millis(100));
-    }
-
-    drop(stream);
-
-    writer
-        .lock()
-        .map_err(|err| err.to_string())?
-        .take()
-        .ok_or("Wav writer is unexpectedly missing".to_string())?
-        .finalize()
-        .map_err(|err| err.to_string())?;
+    state.save_path = Some(save_path);
+    state.writer = writer;
+    state.stream = Arc::new(Mutex::new(Some(stream)));
 
     Ok(())
 }
@@ -194,10 +201,25 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
 /// ```
 #[command]
 pub async fn stop_recording() -> Result<PathBuf, String> {
-    IS_RECORDING.store(false, Ordering::SeqCst);
+    let mut state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
+    if !state.is_recording {
+        return Err("No recording in progress.".to_string());
+    }
+    state.is_recording = false;
 
-    let mut save_path_guard = SAVE_PATH.lock().map_err(|err| err.to_string())?;
-    let save_path = save_path_guard
+    // Stop the stream
+    if let Some(stream) = state.stream.lock().map_err(|err| err.to_string())?.take() {
+        drop(stream);
+    }
+
+    // Finalize the writer
+    if let Some(writer) = state.writer.lock().map_err(|err| err.to_string())?.take() {
+        writer.finalize().map_err(|err| err.to_string())?;
+    }
+
+    // Get and clear the save path
+    let save_path = state
+        .save_path
         .take()
         .ok_or("No recording in progress or save path not set.".to_string())?;
 
@@ -216,9 +238,6 @@ fn get_save_path<R: Runtime>(app_handle: &AppHandle<R>) -> Result<PathBuf, Strin
 
     let timestamp = Local::now().format("%Y%m%d%H%M%S").to_string();
     let save_path = save_dir.join(format!("{timestamp}.wav"));
-
-    let mut save_path_guard = SAVE_PATH.lock().map_err(|err| err.to_string())?;
-    *save_path_guard = Some(save_path.clone());
 
     Ok(save_path)
 }

@@ -14,9 +14,8 @@ const App = () => {
           disabled={isRecording}
           onClick={async () => {
             try {
-              setIsRecording(true);
-
               await startRecording();
+              setIsRecording(true);
             } catch (error) {
               message.error(String(error));
             }
@@ -30,10 +29,7 @@ const App = () => {
             try {
               const path = await stopRecording();
               setIsRecording(false);
-
-              setTimeout(() => {
-                setSavePath(path);
-              }, 200);
+              setSavePath(path);
             } catch (error) {
               message.error(String(error));
             }
@@ -44,14 +40,8 @@ const App = () => {
       </Space>
 
       {!isRecording && savePath && (
-        <audio
-          controls
-          src={convertFileSrc(savePath)}
-          onError={(error) => {
-            console.log("error", error);
-          }}
-        >
-          {savePath}
+        <audio controls src={convertFileSrc(savePath)}>
+          <track kind="captions" />
         </audio>
       )}
     </Space>
