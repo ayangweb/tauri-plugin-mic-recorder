@@ -1,0 +1,25 @@
+[package]
+name = "tauri-plugin-mic-recorder"
+version = "0.1.0"
+authors = [ "ayangweb" ]
+description = ""
+edition = "2021"
+rust-version = "1.77.2"
+exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
+links = "tauri-plugin-mic-recorder"
+
+[dependencies]
+tauri = { version = "2" }
+serde = "1"
+thiserror = "2"
+cpal = "0.15"
+hound = "3.5"
+clap_derive = "4"
+clap = { version = "4", features = ["derive"] }
+chrono = "0.4"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
+
+[features]
+jack = ["cpal/jack"]
