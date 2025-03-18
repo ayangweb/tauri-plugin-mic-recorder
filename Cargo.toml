@@ -1,6 +1,6 @@
 [package]
 name = "tauri-plugin-mic-recorder"
-version = "1.0.0"
+version = "2.0.0"
 authors = [ "ayangweb" ]
 description = "Supports recording audio using a microphone and saving the recorded data as a file."
 repository = "https://github.com/ayangweb/tauri-plugin-mic-recorder"
