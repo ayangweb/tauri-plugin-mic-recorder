@@ -1,8 +1,21 @@
 {
   "name": "tauri-plugin-mic-recorder-api",
-  "version": "0.1.0",
-  "author": "You",
-  "description": "",
+  "version": "1.0.0",
+  "author": "ayangweb",
+  "description": "Supports recording audio using a microphone and saving the recorded data as a file.",
+  "keywords": [
+    "audio-recording",
+    "microphone-recording",
+    "tauri",
+    "tauri-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayangweb/tauri-plugin-mic-recorder.git"
+  },
+  "homepage": "https://github.com/ayangweb/tauri-plugin-mic-recorder#readme",
+  "bugs": "https://github.com/ayangweb/tauri-plugin-mic-recorder/issues",
+  "license": "MIT",
   "type": "module",
   "types": "./dist-js/index.d.ts",
   "main": "./dist-js/index.cjs",

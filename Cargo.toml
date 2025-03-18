@@ -1,8 +1,11 @@
 [package]
 name = "tauri-plugin-mic-recorder"
-version = "0.1.0"
+version = "1.0.0"
 authors = [ "ayangweb" ]
-description = ""
+description = "Supports recording audio using a microphone and saving the recorded data as a file."
+repository = "https://github.com/ayangweb/tauri-plugin-mic-recorder"
+keywords = ["audio-recording", "microphone-recording", "tauri", "tauri-plugin"]
+license = "MIT"
 edition = "2021"
 rust-version = "1.77.2"
 exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]

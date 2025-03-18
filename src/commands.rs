@@ -1,5 +1,6 @@
 use chrono::Local;
 use clap::Parser;
+use cpal::traits::HostTrait as _;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     FromSample, Sample, Stream,
