@@ -86,7 +86,7 @@ pnpm dev
 
 ## Thanks
 
-- Use [cpal](https://github.com/RustAudio/cpal) and [hound](https://github.com/ruuda/hound) generate wav audio files.
+- Use [cpal](https://github.com/RustAudio/cpal) and [hound](https://github.com/ruuda/hound) record and generate wav files.
 
 ## Who's Use It
 
