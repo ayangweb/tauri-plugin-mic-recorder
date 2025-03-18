@@ -14,7 +14,6 @@ serde = "1"
 thiserror = "2"
 cpal = "0.15"
 hound = "3.5"
-clap_derive = "4"
 clap = { version = "4", features = ["derive"] }
 chrono = "0.4"
 
