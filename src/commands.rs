@@ -5,7 +5,6 @@ use cpal::{
     FromSample, Sample, Stream,
 };
 use hound::{SampleFormat, WavSpec, WavWriter};
-use std::sync::LazyLock;
 use std::{
     fs::{create_dir_all, File},
     io::BufWriter,
@@ -13,7 +12,7 @@ use std::{
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
+        Arc, LazyLock, Mutex,
     },
 };
 use tauri::{command, AppHandle, Manager, Runtime};
