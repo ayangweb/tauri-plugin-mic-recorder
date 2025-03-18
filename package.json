@@ -1,6 +1,6 @@
 {
   "name": "tauri-plugin-mic-recorder-api",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "ayangweb",
   "description": "Supports recording audio using a microphone and saving the recorded data as a file.",
   "keywords": [
