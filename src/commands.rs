@@ -11,29 +11,34 @@ use std::{
     io::BufWriter,
     marker::{Send, Sync},
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
 };
 use tauri::{command, AppHandle, Manager, Runtime};
 
 type WavWriterHandle = Arc<Mutex<Option<WavWriter<BufWriter<File>>>>>;
 
-struct RecordingState {
-    is_recording: bool,
-    save_path: Option<PathBuf>,
-    writer: WavWriterHandle,
-    stream: Arc<Mutex<Option<Stream>>>,
-}
+struct SafeStream(Stream);
 
-unsafe impl Send for RecordingState {}
-unsafe impl Sync for RecordingState {}
+unsafe impl Send for SafeStream {}
+unsafe impl Sync for SafeStream {}
+
+struct RecordingState {
+    is_recording: Arc<AtomicBool>,
+    save_path: Arc<Mutex<Option<PathBuf>>>,
+    writer: WavWriterHandle,
+    stream: Arc<Mutex<Option<SafeStream>>>,
+}
 
 impl RecordingState {
     fn new() -> Self {
         Self {
-            is_recording: false,
+            is_recording: Arc::new(AtomicBool::new(false)),
+            save_path: Arc::new(Mutex::new(None)),
             writer: Arc::new(Mutex::new(None)),
             stream: Arc::new(Mutex::new(None)),
-            save_path: None,
         }
     }
 }
@@ -73,10 +78,10 @@ struct Opt {
 #[command]
 pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(), String> {
     let mut state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
-    if state.is_recording {
+    if state.is_recording.load(Ordering::SeqCst) {
         return Err("Recording is already in progress.".to_string());
     }
-    state.is_recording = true;
+    state.is_recording.store(true, Ordering::SeqCst);
 
     let opt = Opt::parse();
 
@@ -181,9 +186,9 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
 
     stream.play().map_err(|err| err.to_string())?;
 
-    state.save_path = Some(save_path);
+    *state.save_path.lock().map_err(|err| err.to_string())? = Some(save_path);
     state.writer = writer;
-    state.stream = Arc::new(Mutex::new(Some(stream)));
+    *state.stream.lock().map_err(|err| err.to_string())? = Some(SafeStream(stream));
 
     Ok(())
 }
@@ -203,15 +208,15 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
 /// ```
 #[command]
 pub async fn stop_recording() -> Result<PathBuf, String> {
-    let mut state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
-    if !state.is_recording {
+    let state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
+    if !state.is_recording.load(Ordering::SeqCst) {
         return Err("No recording in progress.".to_string());
     }
-    state.is_recording = false;
+    state.is_recording.store(false, Ordering::SeqCst);
 
     // Stop the stream
     if let Some(stream) = state.stream.lock().map_err(|err| err.to_string())?.take() {
-        drop(stream);
+        drop(stream.0);
     }
 
     // Finalize the writer
@@ -222,6 +227,8 @@ pub async fn stop_recording() -> Result<PathBuf, String> {
     // Get and clear the save path
     let save_path = state
         .save_path
+        .lock()
+        .map_err(|err| err.to_string())?
         .take()
         .ok_or("No recording in progress or save path not set.".to_string())?;
 
