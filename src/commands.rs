@@ -181,7 +181,7 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
                 None,
             )
             .map_err(|err| err.to_string())?,
-        sample_format => return Err("Unsupported sample format '{sample_format}'".to_string()),
+        _ => return Err("Unsupported sample format".to_string()),
     };
 
     stream.play().map_err(|err| err.to_string())?;
