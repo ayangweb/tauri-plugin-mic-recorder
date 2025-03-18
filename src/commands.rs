@@ -24,14 +24,14 @@ struct SafeStream(Stream);
 unsafe impl Send for SafeStream {}
 unsafe impl Sync for SafeStream {}
 
-struct RecordingState {
+struct State {
     is_recording: Arc<AtomicBool>,
     save_path: Arc<Mutex<Option<PathBuf>>>,
     writer: WavWriterHandle,
     stream: Arc<Mutex<Option<SafeStream>>>,
 }
 
-impl RecordingState {
+impl State {
     fn new() -> Self {
         Self {
             is_recording: Arc::new(AtomicBool::new(false)),
@@ -42,8 +42,7 @@ impl RecordingState {
     }
 }
 
-static RECORDING_STATE: LazyLock<Arc<Mutex<RecordingState>>> =
-    LazyLock::new(|| Arc::new(Mutex::new(RecordingState::new())));
+static STATE: LazyLock<Arc<Mutex<State>>> = LazyLock::new(|| Arc::new(Mutex::new(State::new())));
 
 #[derive(Parser, Debug)]
 struct Opt {
@@ -76,7 +75,7 @@ struct Opt {
 /// ```
 #[command]
 pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(), String> {
-    let mut state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
+    let mut state = STATE.lock().map_err(|err| err.to_string())?;
     if state.is_recording.load(Ordering::SeqCst) {
         return Err("Recording is already in progress.".to_string());
     }
@@ -207,7 +206,7 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
 /// ```
 #[command]
 pub async fn stop_recording() -> Result<PathBuf, String> {
-    let state = RECORDING_STATE.lock().map_err(|err| err.to_string())?;
+    let state = STATE.lock().map_err(|err| err.to_string())?;
     if !state.is_recording.load(Ordering::SeqCst) {
         return Err("No recording in progress.".to_string());
     }

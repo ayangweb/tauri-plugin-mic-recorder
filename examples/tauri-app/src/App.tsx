@@ -17,6 +17,7 @@ const App = () => {
               await startRecording();
               setIsRecording(true);
             } catch (error) {
+              setIsRecording(false);
               message.error(String(error));
             }
           }}
@@ -28,10 +29,11 @@ const App = () => {
           onClick={async () => {
             try {
               const path = await stopRecording();
-              setIsRecording(false);
               setSavePath(path);
             } catch (error) {
               message.error(String(error));
+            } finally {
+              setIsRecording(false);
             }
           }}
         >
