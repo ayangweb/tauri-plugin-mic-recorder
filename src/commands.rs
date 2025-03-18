@@ -93,12 +93,13 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
     // Manually check for flags. Can be passed through cargo with -- e.g.
     // cargo run --release --example beep --features jack -- --jack
     let host = if opt.jack {
-        cpal::host_from_id(cpal::available_hosts()
-            .into_iter()
-            .find(|id| *id == cpal::HostId::Jack)
-            .expect(
-                "make sure --features jack is specified. only works on OSes where jack is available",
-            )).expect("jack host unavailable")
+        cpal::host_from_id(
+            cpal::available_hosts()
+                .into_iter()
+                .find(|id| *id == cpal::HostId::Jack)
+                .ok_or("JACK host not available. Make sure --features jack is specified.")?,
+        )
+        .map_err(|err| err.to_string())?
     } else {
         cpal::default_host()
     };
@@ -117,16 +118,17 @@ pub async fn start_recording<R: Runtime>(app_handle: AppHandle<R>) -> Result<(),
     // Set up the input device and stream with the default input config.
     let device = if opt.device == "default" {
         host.default_input_device()
+            .ok_or("No default input device available")?
     } else {
         host.input_devices()
             .map_err(|err| err.to_string())?
             .find(|x| x.name().map(|y| y == opt.device).unwrap_or(false))
-    }
-    .expect("failed to find input device");
+            .ok_or(format!("No input device found with name: {}", opt.device))?
+    };
 
     let config = device
         .default_input_config()
-        .expect("Failed to get default input config");
+        .map_err(|err| err.to_string())?;
 
     let save_path = get_save_path(&app_handle)?;
     // The WAV file we're recording to.
