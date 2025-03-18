@@ -4,6 +4,8 @@
 
 Supports recording audio using a microphone and saving the recorded data as a file.
 
+https://github.com/user-attachments/assets/7c6f1df4-96e6-4cac-806b-098e8bccc1f7
+
 ## Platform Support
 
 | Platform | Supported |
