@@ -1,4 +1,4 @@
-import { Button, message, Space } from "antd";
+import { Button, message, Space, Typography } from "antd";
 import { useState } from "react";
 import { startRecording, stopRecording } from "tauri-plugin-mic-recorder-api";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -41,10 +41,14 @@ const App = () => {
         </Button>
       </Space>
 
-      {!isRecording && savePath && (
-        <audio controls src={convertFileSrc(savePath)}>
-          <track kind="captions" />
-        </audio>
+      {!isRecording ? (
+        savePath && (
+          <audio controls src={convertFileSrc(savePath)}>
+            <track kind="captions" />
+          </audio>
+        )
+      ) : (
+        <Typography.Text>Recording...</Typography.Text>
       )}
     </Space>
   );
