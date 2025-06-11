@@ -13,8 +13,8 @@ https://github.com/user-attachments/assets/7c6f1df4-96e6-4cac-806b-098e8bccc1f7
 | Windows  | ✅        |
 | macOS    | ✅        |
 | Linux    | ✅        |
-| Android  | ✅        |
-| iOS      | ✅        |
+| Android  | ❌        |
+| iOS      | ❌        |
 
 ## Install
 
@@ -89,7 +89,3 @@ pnpm dev
 ## Thanks
 
 - Use [cpal](https://github.com/RustAudio/cpal) and [hound](https://github.com/ruuda/hound) record and generate wav files.
-
-## Who's Use It
-
-- [Coco AI](https://github.com/infinilabs/coco-app) - Search, Connect, Collaborate, Your Personal AI Search and Assistant, all in one space.
